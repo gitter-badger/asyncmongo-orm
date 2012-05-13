@@ -1,5 +1,5 @@
 # coding: utf-8
-from datetime import datetime
+from datetime import datetime, date
 from bson import ObjectId
 
 class Field(object):
@@ -34,48 +34,54 @@ class Field(object):
 
 class StringField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(StringField, self).__init__(field_type=unicode, *args, **kargs)
+        super(StringField, self).__init__(field_type=unicode, *args, **kwargs)
         
 class IntegerField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
         
-        super(IntegerField, self).__init__(field_type=int, *args, **kargs)
+        super(IntegerField, self).__init__(field_type=int, *args, **kwargs)
 
 class DateTimeField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
         
-        super(DateTimeField, self).__init__(field_type=datetime, *args, **kargs)
+        super(DateTimeField, self).__init__(field_type=datetime, *args, **kwargs)
+
+class DateField(Field):
+
+    def __init__(self, *args, **kwargs):
+
+        super(DateField, self).__init__(field_type=date, *args, **kwargs)
 
 class BooleanField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(BooleanField, self).__init__(field_type=bool, *args, **kargs)
+        super(BooleanField, self).__init__(field_type=bool, *args, **kwargs)
 
 class FloatField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(FloatField, self).__init__(field_type=float, *args, **kargs)
+        super(FloatField, self).__init__(field_type=float, *args, **kwargs)
 
 class ListField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(ListField, self).__init__(field_type=list, *args, **kargs)
+        super(ListField, self).__init__(field_type=list, *args, **kwargs)
 
 class ObjectField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(ObjectField, self).__init__(field_type=dict, *args, **kargs)
+        super(ObjectField, self).__init__(field_type=dict, *args, **kwargs)
 
 class ObjectIdField(Field):
 
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args, **kwargs):
 
-        super(ObjectIdField, self).__init__(field_type=ObjectId, *args, **kargs)
+        super(ObjectIdField, self).__init__(field_type=ObjectId, *args, **kwargs)
