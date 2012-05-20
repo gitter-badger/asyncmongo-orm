@@ -1,6 +1,6 @@
 # coding: utf-8
 from datetime import datetime, date
-from bson import ObjectId
+from bson import ObjectId, Binary
 
 class Field(object):
     
@@ -85,3 +85,8 @@ class ObjectIdField(Field):
     def __init__(self, *args, **kwargs):
 
         super(ObjectIdField, self).__init__(field_type=ObjectId, *args, **kwargs)
+
+class BinaryField(Field):
+    def __init__(self, *args, **kwargs):
+
+        super(BinaryField, self).__init__(field_type=Binary, *args, **kwargs)
