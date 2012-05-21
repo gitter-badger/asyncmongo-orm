@@ -42,9 +42,13 @@ class Collection(object):
         self._data = {}
         
 
-    def as_dict(self):
+    def as_dict(self, fields=(), exclude=()):
         items = {}
         for attr_name, attr_type in self.__class__.__dict__.iteritems():
+            if attr_name in exclude:
+                continue
+            if fields and not attr_name in fields:
+                continue
             if isinstance(attr_type, Field):
                 attr_value = getattr(self, attr_name)
                 if attr_value != None:
