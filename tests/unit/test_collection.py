@@ -90,6 +90,20 @@ class CollectionTestCase(unittest2.TestCase):
         }
         
         self.assertEquals(expected_dict, collection_test.as_dict())
+        only_fields = {
+            'string_attr': 'string_attr',
+            'integer_attr': 1,
+        }
+        self.assertEquals(only_fields, collection_test.as_dict(fields=('string_attr','integer_attr')))
+
+        excluded_fields = {
+            'bool_attr': False,
+            'float_attr': 1.0,
+            'list_attr': [1,2,3],
+            'object_attr': {'chave': 'valor'},
+            'object_id_attr': object_id,
+        }
+        self.assertEquals(excluded_fields, collection_test.as_dict(exclude=('string_attr','integer_attr')))
         
     def test_can_create_collection(self):
         object_id = ObjectId()
@@ -102,7 +116,7 @@ class CollectionTestCase(unittest2.TestCase):
             'object_attr': {'chave': 'valor'},
             'object_id_attr': object_id,
         }
-        
+
         class CollectionTest(collection.Collection):
             string_attr = StringField()
             integer_attr = IntegerField()
