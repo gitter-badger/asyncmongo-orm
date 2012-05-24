@@ -5,7 +5,7 @@ from asyncmongoorm.session import Session
 from asyncmongoorm.field import StringField, ObjectIdField
 
 from tornado.ioloop import IOLoop
-from tornado import testing
+from tornado import testing, gen
 from bson import ObjectId
 
 Session.create('localhost', 27017, 'asyncmongo_test')
@@ -14,194 +14,165 @@ Session.create('localhost', 27017, 'asyncmongo_test')
 class CollectionTest(Collection):
 
     __collection__ = "collection_test"
-
-    _id = ObjectIdField()
     string_attr = StringField()
     
 class ManagerTestCase(testing.AsyncTestCase):
-    
+
+    @gen.engine
     def tearDown(self):
         super(ManagerTestCase, self).tearDown()
-        CollectionTest.objects.drop(callback=self.stop)
-        self.wait()
-        
+        yield gen.Task(CollectionTest.objects.drop)
+
     def get_new_ioloop(self):
         return IOLoop.instance()
 
+    @gen.engine
     def test_find_one(self):
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "string value"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         other_collection_test = CollectionTest()
         other_collection_test._id = ObjectId()
         other_collection_test.string_attr = "string value"
-        other_collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(other_collection_test.save)
 
-        CollectionTest.objects.find_one({'string_attr':"string value"}, callback=self.stop)
-        collections_found = self.wait()
+        collections_found = yield gen.Task(CollectionTest.objects.find_one, {'string_attr':"string value"})
 
         self.assertIn(collections_found._id, (collection_test._id, other_collection_test._id))
-    
+
+    @gen.engine
     def test_find_one_not_found(self):
-
-        CollectionTest.objects.find_one({'string_attr':"string value"}, callback=self.stop)
-        collections_found = self.wait()
-
+        collections_found = yield gen.Task(CollectionTest.objects.find_one, {'string_attr':"string value"})
         self.assertEquals(None, collections_found)
 
+    @gen.engine
     def test_find(self):
         
-        collection_test = CollectionTest()
-        collection_test._id = ObjectId()
-        collection_test.string_attr = "string value"
-        collection_test.save(callback=self.stop)
-        self.wait()
-        
-        other_collection_test = CollectionTest()
-        other_collection_test._id = ObjectId()
-        other_collection_test.string_attr = "other string value"
-        other_collection_test.save(callback=self.stop)
-        self.wait()
-        
-        CollectionTest.objects.find({'string_attr':"string value"}, callback=self.stop)
-        collections_found = self.wait()
+        collection_test = CollectionTest.create(dict(string_attr = "string value"))
+        yield gen.Task(collection_test.save)
+
+        other_collection_test = CollectionTest.create(dict(string_attr = "other string value"))
+        yield gen.Task(other_collection_test.save)
+
+        collections_found = yield gen.Task(CollectionTest.objects.find, {'string_attr':"string value"})
         
         self.assertEquals(1, len(collections_found))
         self.assertEquals(collection_test._id, collections_found[0]._id)
 
+    @gen.engine
     def test_find_not_found(self):
-        CollectionTest.objects.find({'string_attr':"string value diff"}, callback=self.stop)
-        collections_found = self.wait()
-
+        collections_found = yield gen.Task(CollectionTest.objects.find, {'string_attr':"string value diff"})
         self.assertEquals([], collections_found)
-        
+
+    @gen.engine
     def test_count(self):
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "string value"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
-        CollectionTest.objects.count(callback=self.stop)
-        count = self.wait()
+        count = yield gen.Task(CollectionTest.objects.count)
 
         self.assertEquals(1, count)
-        collection_test.remove()
+        yield gen.Task(collection_test.remove)
 
+    @gen.engine
     def test_count_not_found(self):
-
-        CollectionTest.objects.count(callback=self.stop)
-        count = self.wait()
-
+        count = yield gen.Task(CollectionTest.objects.count)
         self.assertEquals(0, count)
-        
+
+    @gen.engine
     def test_can_be_find(self):
 
-        CollectionTest.objects.drop(callback=self.stop)
-        self.wait()
+        yield gen.Task(CollectionTest.objects.drop)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "string value"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
-        CollectionTest.objects.find({'string_attr':"string value"}, callback=self.stop)
-        collections_found = self.wait()
-
+        collections_found = yield gen.Task(CollectionTest.objects.find, {'string_attr':"string value"})
         self.assertEquals(collection_test._id, collections_found[0]._id)
+        yield gen.Task(collection_test.remove)
 
-        collection_test.remove(callback=self.stop)
-        self.wait()
-
+    @gen.engine
     def test_find_distinct_values_with_distinct_command(self):
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value A"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value B"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value A"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value C"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
-        CollectionTest.objects.distinct(key='string_attr', callback=self.stop)
-        distinct_values = self.wait()
+        distinct_values = yield gen.Task(CollectionTest.objects.distinct, key='string_attr')
 
         self.assertEqual(3, len(distinct_values))
         self.assertIn("Value A", distinct_values)
         self.assertIn("Value B", distinct_values)
         self.assertIn("Value C", distinct_values)
 
+    @gen.engine
     def test_find_distinct_values_with_distinct_command_excluding_some_values(self):
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value A"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value B"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value A"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         collection_test = CollectionTest()
         collection_test._id = ObjectId()
         collection_test.string_attr = "Value C"
-        collection_test.save(callback=self.stop)
-        self.wait()
+        yield gen.Task(collection_test.save)
 
         query = {
             'string_attr': {
                 '$ne': 'Value A'
             }
         }
-        CollectionTest.objects.distinct(key='string_attr', query=query, callback=self.stop)
-        distinct_values = self.wait()
+        distinct_values = yield gen.Task(CollectionTest.objects.distinct, key='string_attr', query=query)
 
         self.assertEqual(2, len(distinct_values))
         self.assertIn("Value B", distinct_values)
         self.assertIn("Value C", distinct_values)
 
+    @gen.engine
     def test_execute_simple_mapreduce_return_results_inline(self):
         collections = [
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value A'}),
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value B'}),
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value A'}),
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value C'}),
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value D'}),
-            CollectionTest.create({'_id': ObjectId(), 'string_attr': 'Value E'}),
+            CollectionTest.create({ 'string_attr': 'Value A'}),
+            CollectionTest.create({ 'string_attr': 'Value B'}),
+            CollectionTest.create({ 'string_attr': 'Value A'}),
+            CollectionTest.create({ 'string_attr': 'Value C'}),
+            CollectionTest.create({ 'string_attr': 'Value D'}),
+            CollectionTest.create({ 'string_attr': 'Value E'}),
         ]
         for coll in collections:
-            coll.save(callback=self.stop)
-            self.wait()
+            yield gen.Task(coll.save)
 
         query = {
             'string_attr': {'$ne': 'Value E'},
@@ -223,8 +194,7 @@ class ManagerTestCase(testing.AsyncTestCase):
         }
         """
 
-        CollectionTest.objects.map_reduce(map_, reduce_, query=query, callback=self.stop)
-        results = self.wait()
+        results = yield gen.Task(CollectionTest.objects.map_reduce, map_, reduce_, query=query)
 
         self.assertEquals(4, len(results))
         self.assertEquals({u'_id': u'Value A', u'value': 2.0}, results[0])

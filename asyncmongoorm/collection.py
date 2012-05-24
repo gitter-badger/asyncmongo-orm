@@ -1,11 +1,12 @@
 # coding: utf-8
 import functools
 import logging
+from bson.objectid import ObjectId
 from tornado import gen
 from asyncmongoorm.signal import pre_save, post_save, pre_remove, post_remove, pre_update, post_update
 from asyncmongoorm.manager import Manager
 from asyncmongoorm.session import Session
-from asyncmongoorm.field import Field
+from asyncmongoorm.field import Field, ObjectIdField
 
 __lazy_classes__ = {}
 
@@ -27,7 +28,7 @@ class CollectionMetaClass(type):
         
         return new_class
 
-class Collection(object):
+class BaseCollection(object):
 
     __metaclass__ = CollectionMetaClass
 
@@ -36,11 +37,11 @@ class Collection(object):
             global __lazy_classes__
             return __lazy_classes__.get(class_name)
 
-        return super(Collection, cls).__new__(cls, *args, **kwargs)        
+        return super(BaseCollection, cls).__new__(cls, *args, **kwargs)
         
     def __init__(self):
         self._data = {}
-        
+        self._changed_fields = set()
 
     def as_dict(self, fields=(), exclude=()):
         items = {}
@@ -53,11 +54,21 @@ class Collection(object):
                 attr_value = getattr(self, attr_name)
                 if attr_value != None:
                     items[attr_name] = attr_value
-        return items    
-    
+        return items
+
+    def changed_data_dict(self):
+        return self.as_dict(fields=list(self._changed_fields))
+
+    @classmethod
+    @gen.engine
+    def setup_indexes(self):
+        raise NotImplemented
+
     @classmethod
     def create(cls, dictionary):
         instance = cls()
+        if '_id' in dictionary:
+            instance._is_new = False
         for (key, value) in dictionary.items():
             try:
                 setattr(instance, str(key), value)
@@ -66,13 +77,27 @@ class Collection(object):
 
         return instance
 
+    def is_new(self):
+        return getattr(self, '_is_new', True)
+
     @gen.engine
-    def save(self, callback=None):
-        pre_save.send(instance=self)
+    def save(self, obj_data=None, callback=None):
+        if self.is_new():
+            pre_save.send(instance=self)
 
-        response, error = yield gen.Task(Session(self.__collection__).insert, self.as_dict(), safe=True)
+            result, error = yield gen.Task(Session(self.__collection__).insert, self.as_dict(), safe=True)
+            self._is_new = False
 
-        post_save.send(instance=self)
+            post_save.send(instance=self)
+        else:
+            pre_update.send(instance=self)
+
+            if not obj_data:
+                obj_data = self.changed_data_dict()
+
+            response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, { "$set": obj_data }, safe=True)
+
+            post_update.send(instance=self)
 
         if callback:
             callback(error)
@@ -88,16 +113,6 @@ class Collection(object):
         if callback:
             callback(error)
 
-    @gen.engine
-    def update(self, obj_data=None, callback=None):
-        pre_update.send(instance=self)
 
-        if not obj_data:
-            obj_data = self.as_dict()
-
-        response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, obj_data, safe=True)
-
-        post_update.send(instance=self)
-
-        if callback:
-            callback(error)
+class Collection(BaseCollection):
+    _id = ObjectIdField(default=lambda : ObjectId())

@@ -113,6 +113,7 @@ class ManagerTestCase(testing.AsyncTestCase, unittest2.TestCase):
         self.assertEqual(3, len(distinct_results))
 
     @fudge.test
+    @gen.engine
     def test_simple_map_reduce(self):
         fake_collection = fudge.Fake('Collection').has_attr(__collection__='some_collection')
 
@@ -140,11 +141,9 @@ class ManagerTestCase(testing.AsyncTestCase, unittest2.TestCase):
         fake_session = fudge.Fake('Session')
         fake_session.is_callable().returns_fake().has_attr(command=fake_command)
 
-        results = None
         with fudge.patched_context(manager, 'Session', fake_session):
             manager_obj = manager.Manager(fake_collection)
-            manager_obj.map_reduce("map_fn", "reduce_fn", query={"my_field": "my_value"}, callback=self.stop)
-            results = self.wait()
+            results = yield gen.Task(manager_obj.map_reduce, "map_fn", "reduce_fn", query={"my_field": "my_value"})
 
         self.assertEquals(3, len(results))
         self.assertEquals({u'my_key_1': u'my_data_1'}, results[0])

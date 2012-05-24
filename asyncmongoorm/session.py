@@ -7,8 +7,7 @@ class Session(object):
     def __new__(cls, collection_name=None):
 
         if not cls._session:
-            raise(ValueError("Session is not created"))
-
+            raise ValueError("Session is not created")
         if collection_name:
             return getattr(cls._session, collection_name)
             
@@ -17,6 +16,7 @@ class Session(object):
     @classmethod
     def create(cls, host, port, dbname, **kwargs):
         if not cls._session:
+#            raise Exception(Client)
             cls._session = Client(pool_id='mydb', host=host, port=port, dbname=dbname, **kwargs)
     
     @classmethod

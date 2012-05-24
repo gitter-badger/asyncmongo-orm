@@ -4,7 +4,7 @@ from bson import ObjectId, Binary
 
 class Field(object):
     
-    def __init__(self, default=None, name=None, field_type=None):
+    def __init__(self, default=None, name=None, field_type=None, index=None, unique=None):
         
         self.default = default
         self.field_type = field_type
@@ -16,7 +16,10 @@ class Field(object):
             
         value = instance._data.get(self.name)
         if value is None:
-            return self.default
+            if callable(self.default):
+                return self.default()
+            else:
+                return self.default
 
         return value
 
@@ -30,6 +33,7 @@ class Field(object):
             except ValueError:
                 raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
 
+        instance._changed_fields.add(self.name)
         instance._data[self.name] = value
 
 class StringField(Field):
