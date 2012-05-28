@@ -43,7 +43,7 @@ class Collection(object):
         self._data = { }
         self._changed_fields = set()
 
-    def as_dict(self, fields=(), exclude=()):
+    def as_dict(self, fields=(), exclude=(), json_compat=None):
         items = {}
         for attr_name, attr_type in self.__class__.__dict__.iteritems():
             if attr_name in exclude:
@@ -52,8 +52,9 @@ class Collection(object):
                 continue
             if isinstance(attr_type, Field):
                 attr_value = getattr(self, attr_name)
-                if attr_value != None:
-                    items[attr_name] = attr_value
+                if json_compat and isinstance(attr_value, ObjectId):
+                    attr_value = str(attr_value)
+                items[attr_name] = attr_value
         return items
 
     def changed_data_dict(self):
