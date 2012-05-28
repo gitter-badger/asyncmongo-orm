@@ -15,8 +15,9 @@ class ManagerTestCase(testing.AsyncTestCase, unittest2.TestCase):
             __collection__ = 'some_collection'
             some_attr = StringField()
 
-        def fake_find_one(query, callback):
+        def fake_find_one(query, callback, **kwargs):
             self.assertEqual(query, {'_id':1})
+            self.assertEquals(kwargs, {})
             callback((({'some_attr': 'some_value'},), None))
 
         fake_session = fudge.Fake()
@@ -27,6 +28,31 @@ class ManagerTestCase(testing.AsyncTestCase, unittest2.TestCase):
             manager_object.find_one({'_id': 1}, callback=self.stop)
             instance = self.wait()
             self.assertEquals('some_value', instance.some_attr)
+
+    @fudge.test
+    def test_find_one_with_kwargs(self):
+
+        class CollectionTest(collection.Collection):
+            __collection__ = 'some_collection'
+            some_attr = StringField()
+
+        test_query = {'_id': fudge.Fake()}
+        test_kwargs = {'foo': fudge.Fake()}
+        
+        def fake_find_one(query, callback, **kwargs):
+            self.assertEqual(query, test_query)
+            self.assertEqual(kwargs, test_kwargs)
+            callback((({'some_attr': 'some_value'},), None))
+
+        fake_session = fudge.Fake()
+        fake_session.is_callable().with_args('some_collection').returns_fake().has_attr(find_one=fake_find_one)
+
+        with fudge.patched_context(manager, 'Session', fake_session):
+            manager_object  = manager.Manager(CollectionTest)
+            manager_object.find_one(test_query, callback=self.stop, **test_kwargs)
+            instance = self.wait()
+            self.assertEquals('some_value', instance.some_attr)
+
 
     @fudge.test
     def test_find(self):

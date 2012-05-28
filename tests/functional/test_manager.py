@@ -44,6 +44,23 @@ class ManagerTestCase(testing.AsyncTestCase):
         self.assertIn(collections_found._id, (collection_test._id, other_collection_test._id))
 
     @gen.engine
+    def test_find_one_kwargs(self):
+
+        collection_test = CollectionTest()
+        collection_test._id = ObjectId()
+        collection_test.string_attr = "string value"
+        yield gen.Task(collection_test.save)
+
+        other_collection_test = CollectionTest()
+        other_collection_test._id = ObjectId()
+        other_collection_test.string_attr = "string value"
+        yield gen.Task(other_collection_test.save)
+
+        collections_found = yield gen.Task(CollectionTest.objects.find_one,
+                {'string_attr':"string value"}, fields= {'string_attr':1})
+        self.assertEqual({'string_attr':"string value"}, collections_found.as_dict())
+
+    @gen.engine
     def test_find_one_not_found(self):
         collections_found = yield gen.Task(CollectionTest.objects.find_one, {'string_attr':"string value"})
         self.assertEquals(None, collections_found)

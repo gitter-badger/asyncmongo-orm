@@ -11,9 +11,9 @@ class Manager(object):
         self.collection = collection
     
     @gen.engine
-    def find_one(self, query, callback):
-        result, error = yield gen.Task(Session(self.collection.__collection__).find_one, query)
-        
+    def find_one(self, query, callback, **kw):
+        result, error = yield gen.Task(Session(self.collection.__collection__).find_one, query, **kw)
+
         instance = None
         if result and result[0]:
             instance = self.collection.create(result[0])
@@ -135,12 +135,12 @@ class Manager(object):
         result, error = yield gen.Task(Session().command, command)
         if not result or int(result[0]['ok']) != 1:
             callback(None)
-            return
+            return 
 
         callback(result[0]['results'])
 
     @gen.engine
-    def drop(self, callback):
+    def drop(self, callback=None):
         yield gen.Task(Session(self.collection.__collection__).remove)
-        
-        callback()
+        if callback:
+            callback()
