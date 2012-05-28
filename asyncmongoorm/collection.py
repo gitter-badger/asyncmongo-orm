@@ -28,7 +28,7 @@ class CollectionMetaClass(type):
         
         return new_class
 
-class BaseCollection(object):
+class Collection(object):
 
     __metaclass__ = CollectionMetaClass
 
@@ -37,10 +37,10 @@ class BaseCollection(object):
             global __lazy_classes__
             return __lazy_classes__.get(class_name)
 
-        return super(BaseCollection, cls).__new__(cls, *args, **kwargs)
+        return super(Collection, cls).__new__(cls, *args, **kwargs)
         
     def __init__(self):
-        self._data = {}
+        self._data = { }
         self._changed_fields = set()
 
     def as_dict(self, fields=(), exclude=()):
@@ -83,21 +83,22 @@ class BaseCollection(object):
     @gen.engine
     def save(self, obj_data=None, callback=None):
         if self.is_new():
-            pre_save.send(instance=self)
-
-            result, error = yield gen.Task(Session(self.__collection__).insert, self.as_dict(), safe=True)
+            yield gen.Task(pre_save.send, instance=self)
+            if not obj_data:
+                obj_data = self.as_dict()
+            result, error = yield gen.Task(Session(self.__collection__).insert, obj_data, safe=True)
             self._is_new = False
 
-            post_save.send(instance=self)
+            yield gen.Task(post_save.send, instance=self)
         else:
-            pre_update.send(instance=self)
+            yield gen.Task(pre_update.send, instance=self)
 
             if not obj_data:
                 obj_data = self.changed_data_dict()
 
             response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, { "$set": obj_data }, safe=True)
 
-            post_update.send(instance=self)
+            yield gen.Task(post_update.send, instance=self)
 
         if callback:
             callback(error)
@@ -113,6 +114,3 @@ class BaseCollection(object):
         if callback:
             callback(error)
 
-
-class Collection(BaseCollection):
-    _id = ObjectIdField(default=lambda : ObjectId())

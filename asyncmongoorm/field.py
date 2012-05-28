@@ -15,11 +15,12 @@ class Field(object):
             return self
             
         value = instance._data.get(self.name)
-        if value is None:
+        if value is None and self.default:
             if callable(self.default):
-                return self.default()
+                value = self.default()
             else:
-                return self.default
+                value = self.default
+            setattr(instance, self.name, value)
 
         return value
 

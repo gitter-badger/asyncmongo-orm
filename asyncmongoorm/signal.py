@@ -1,4 +1,5 @@
 # coding: utf-8
+from tornado import gen
 
 class Signal(object):
 
@@ -11,11 +12,16 @@ class Signal(object):
     def disconnect(self, sender, handler):
         self.receivers.remove((sender, handler))
 
-    def send(self, instance):
+    @gen.engine
+    def send(self, instance, callback=None):
         for sender, handler in self.receivers:
             if isinstance(instance, sender):
-                handler(sender, instance)
-
+                if hasattr(handler,'async'):
+                    yield gen.Task(handler, sender, instance)
+                else:
+                    handler(sender, instance)
+        if callback:
+            callback()
 def receiver(signal, sender):
 
     def _decorator(handler):

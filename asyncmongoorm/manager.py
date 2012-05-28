@@ -135,7 +135,7 @@ class Manager(object):
         result, error = yield gen.Task(Session().command, command)
         if not result or int(result[0]['ok']) != 1:
             callback(None)
-            return 
+            return
 
         callback(result[0]['results'])
 
