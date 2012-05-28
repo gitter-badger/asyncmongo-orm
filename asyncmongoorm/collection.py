@@ -1,4 +1,5 @@
 # coding: utf-8
+from datetime import date
 import functools
 import logging
 from bson.objectid import ObjectId
@@ -52,8 +53,11 @@ class Collection(object):
                 continue
             if isinstance(attr_type, Field):
                 attr_value = getattr(self, attr_name)
-                if json_compat and isinstance(attr_value, ObjectId):
-                    attr_value = str(attr_value)
+                if json_compat:
+                    if isinstance(attr_value, ObjectId):
+                        attr_value = str(attr_value)
+                    if isinstance(attr_value, date):
+                        attr_value = attr_value.isoformat()
                 items[attr_name] = attr_value
         return items
 
