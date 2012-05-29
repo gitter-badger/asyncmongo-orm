@@ -61,6 +61,20 @@ class DateField(Field):
 
         super(DateField, self).__init__(field_type=date, *args, **kwargs)
 
+    def __get__(self, instance, owner):
+        if not instance:
+            return self
+
+        value = instance._data.get(self.name)
+        if value is None and self.default:
+            if callable(self.default):
+                value = self.default()
+            else:
+                value = self.default
+            setattr(instance, self.name, value)
+
+        return datetime(value.year, value.month, value.day)
+    
 class BooleanField(Field):
 
     def __init__(self, *args, **kwargs):
