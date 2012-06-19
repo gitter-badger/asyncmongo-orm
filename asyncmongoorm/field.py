@@ -15,7 +15,7 @@ class Field(object):
             return self
             
         value = instance._data.get(self.name)
-        if value is None and self.default:
+        if value is None and self.default is not None:
             if callable(self.default):
                 value = self.default()
             else:

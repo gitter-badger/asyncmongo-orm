@@ -32,6 +32,17 @@ class Manager(object):
         callback(items)
 
     @gen.engine
+    def get_or_create(self, query, callback, defaults=None, **kw):
+        result, error = yield gen.Task(Session(self.collection.__collection__).find_one, query, **kw)
+
+        if result and result[0]:
+            instance = self.collection.create(result[0])
+        else:
+            instance = self.collection.create(defaults)
+
+        callback(instance)
+
+    @gen.engine
     def count(self, query=None, callback=None):
         command = {
             "count": self.collection.__collection__
