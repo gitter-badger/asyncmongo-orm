@@ -72,6 +72,11 @@ class Collection(object):
     @classmethod
     def create(cls, dictionary):
         instance = cls()
+        if not dictionary:
+            return instance
+        
+        assert isinstance(dictionary, dict)
+
         if '_id' in dictionary:
             instance._is_new = False
         for (key, value) in dictionary.items():
