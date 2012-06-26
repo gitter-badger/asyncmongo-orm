@@ -37,10 +37,12 @@ class Manager(object):
 
         if result and result[0]:
             instance = self.collection.create(result[0])
+            created = False
         else:
+            created = True
             instance = self.collection.create(defaults)
 
-        callback(instance)
+        callback(instance, created)
 
     @gen.engine
     def count(self, query=None, callback=None):
