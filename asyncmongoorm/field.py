@@ -33,8 +33,9 @@ class Field(object):
                 raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
             except ValueError:
                 raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
-
-        instance._changed_fields.add(self.name)
+        # MongoDB doesnt allow to change _id
+        if self.name != "_id":
+            instance._changed_fields.add(self.name)
         instance._data[self.name] = value
 
 class StringField(Field):
