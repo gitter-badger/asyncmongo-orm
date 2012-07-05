@@ -18,10 +18,9 @@ class CollectionTest(Collection):
     
 class ManagerTestCase(testing.AsyncTestCase):
 
-    @gen.engine
     def tearDown(self):
         super(ManagerTestCase, self).tearDown()
-        yield gen.Task(CollectionTest.objects.drop)
+        CollectionTest.objects.drop()
 
     def get_new_ioloop(self):
         return IOLoop.instance()

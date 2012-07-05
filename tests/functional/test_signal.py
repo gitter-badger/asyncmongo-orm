@@ -21,6 +21,7 @@ class SignalTestCase(testing.AsyncTestCase):
         class CollectionTest(Collection):
             __collection__ = "collection_test"
             string_attr = StringField()
+            other_attr = StringField()
         self.CollectionTest = CollectionTest
 
     @gen.engine
@@ -184,6 +185,7 @@ class AsyncSignalTestCase(testing.AsyncTestCase):
         yield gen.Task(collection_test.save)
 
         @signal.receiver(signal.pre_remove, self.CollectionTest)
+        @gen.engine
         def collection_pre_remove_handler(sender, instance, callback=None):
             SignalTestCase.instance_copy = deepcopy(instance)
             yield gen.Task(self.CollectionTest.objects.find_one, instance._id)
@@ -202,6 +204,7 @@ class AsyncSignalTestCase(testing.AsyncTestCase):
         yield gen.Task(collection_test.save)
 
         @signal.receiver(signal.post_remove, self.CollectionTest)
+        @gen.engine
         def collection_post_remove_handler(sender, instance, callback=None):
             collection_found = yield gen.Task(self.CollectionTest.objects.find_one, collection_test._id)
             self.assertIsNone(collection_found)
@@ -213,6 +216,7 @@ class AsyncSignalTestCase(testing.AsyncTestCase):
         yield gen.Task(collection_test.remove)
         self.assertTrue(SignalTestCase.signal_triggered)
 
+    @gen.engine
     def test_update_sends_pre_update_signal_correctly(self):
         collection_test = self.CollectionTest()
         collection_test.string_attr = "should be string value"
@@ -221,11 +225,14 @@ class AsyncSignalTestCase(testing.AsyncTestCase):
 
         @signal.receiver(signal.pre_update, self.CollectionTest)
         @gen.engine
-        def collection_pre_update_handler(sender, instance, callback=True):
+        def collection_pre_update_handler(sender, instance, callback):
             instance.string_attr += ' updated'
             yield gen.Task(self.CollectionTest.objects.find_one, instance._id)
             SignalTestCase.signal_triggered = True
+            if callback:
+                callback()
         collection_pre_update_handler.async = True
+        collection_test.other_attr = "zomg"
         yield gen.Task(collection_test.save)
 
         collection_found = yield gen.Task(self.CollectionTest.objects.find_one, collection_test._id)
