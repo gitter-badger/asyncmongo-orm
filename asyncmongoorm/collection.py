@@ -72,7 +72,7 @@ class Collection(object):
     def update_attrs(self, dictionary):
         for (key, value) in dictionary.items():
             try:
-                setattr(instance, str(key), value)
+                setattr(self, str(key), value)
             except TypeError, e:
                 logging.warn(e)
 
