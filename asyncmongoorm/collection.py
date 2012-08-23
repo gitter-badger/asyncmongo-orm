@@ -69,6 +69,13 @@ class Collection(object):
     def setup_indexes(self):
         raise NotImplemented
 
+    def update_attrs(self, dictionary):
+        for (key, value) in dictionary.items():
+            try:
+                setattr(instance, str(key), value)
+            except TypeError, e:
+                logging.warn(e)
+
     @classmethod
     def create(cls, dictionary):
         instance = cls()
@@ -79,12 +86,8 @@ class Collection(object):
 
         if '_id' in dictionary:
             instance._is_new = False
-        for (key, value) in dictionary.items():
-            try:
-                setattr(instance, str(key), value)
-            except TypeError, e:
-                logging.warn(e)
 
+        instance.update_attrs(dictionary)
         return instance
 
     def is_new(self):
@@ -109,6 +112,8 @@ class Collection(object):
             response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, { "$set": obj_data }, safe=True)
 
             yield gen.Task(post_update.send, instance=self)
+
+        self.update_attrs(obj_data)
 
         if callback:
             callback(error)
