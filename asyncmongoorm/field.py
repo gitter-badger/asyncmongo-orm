@@ -15,7 +15,7 @@ class Field(object):
         allowed = ("dropDups", "sparse", "unique")
         def check(option):
             assert option in allowed, ("Unknown index option %s,"
-                                  " allowed are %s" % option, allowed)
+                                  " allowed are %s" % (option, allowed))
         if isinstance(index, (list,tuple,set)):
             map(check, index)
             return tuple(set(index))
