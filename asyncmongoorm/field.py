@@ -4,11 +4,12 @@ from bson import ObjectId, Binary
 
 class Field(object):
     
-    def __init__(self, default=None, name=None, field_type=None, index=None, unique=None):
+    def __init__(self, default=None, name=None, field_type=None, index=None):
         
         self.default = default
         self.field_type = field_type
         self.name = name
+        self.index = index
     
     def __get__(self, instance, owner):
         if not instance:

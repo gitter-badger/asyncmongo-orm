@@ -11,6 +11,14 @@ from asyncmongoorm.field import Field, ObjectIdField
 
 __lazy_classes__ = {}
 
+__collections__ = set()
+
+def get_collections():
+    return tuple(__collections__)
+
+def register_collection(cls):
+    __collections__.add(cls)
+
 class CollectionMetaClass(type):
 
     def __new__(cls, name, bases, attrs):
@@ -26,7 +34,7 @@ class CollectionMetaClass(type):
         __lazy_classes__[name] = new_class
         
         new_class.objects = Manager(collection=new_class)
-        
+        register_collection(new_class)
         return new_class
 
 class Collection(object):
@@ -65,9 +73,13 @@ class Collection(object):
         return self.as_dict(fields=list(self._changed_fields))
 
     @classmethod
-    @gen.engine
-    def setup_indexes(self):
-        raise NotImplemented
+    def field_indexes(cls):
+        for attr_name, attr_type in cls.__dict__.iteritems():
+            if isinstance(attr_type, Field) and attr_type.index:
+                args = [{attr_name: 1}]
+                args.append(dict( (k, True) for k in attr_type.index))
+                yield args
+
 
     def update_attrs(self, dictionary):
         for (key, value) in dictionary.items():
