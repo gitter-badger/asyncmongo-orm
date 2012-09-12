@@ -17,7 +17,7 @@ def get_collections():
     return tuple(__collections__)
 
 def register_collection(cls):
-    __collections__.add(cls)
+    if not cls is Collection: __collections__.add(cls)
 
 class CollectionMetaClass(type):
 
