@@ -16,6 +16,8 @@ class Field(object):
         def check(option):
             assert option in allowed, ("Unknown index option %s,"
                                   " allowed are %s" % (option, allowed))
+        if isinstance(index, str):
+            index = (index,)
         if isinstance(index, (list,tuple,set)):
             map(check, index)
             return tuple(set(index))
