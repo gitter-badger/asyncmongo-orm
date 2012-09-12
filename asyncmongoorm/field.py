@@ -10,7 +10,15 @@ class Field(object):
         self.field_type = field_type
         self.name = name
         self.index = index
-    
+
+    def _validate_index(self, index):
+        allowed = ("dropDups", "sparse", "unique")
+        def check(option):
+            assert option in allowed, ("Unknown index option %s,"
+                                  " allowed are %s" % option, allowed)
+        if isinstance(index, (list,tuple,set)):
+            map(check, index)
+            
     def __get__(self, instance, owner):
         if not instance:
             return self
