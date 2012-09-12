@@ -74,11 +74,14 @@ class Collection(object):
 
     @classmethod
     def field_indexes(cls):
+        indexes = []
         for attr_name, attr_type in cls.__dict__.iteritems():
             if isinstance(attr_type, Field) and attr_type.index:
-                args = [{attr_name: 1}]
-                args.append(dict( (k, True) for k in attr_type.index))
-                yield args
+                indexes.append([
+                    {attr_name: 1},
+                    dict( (k, True) for k in attr_type.index)
+                ])
+        return indexes
 
 
     def update_attrs(self, dictionary):
