@@ -77,7 +77,7 @@ class Collection(object):
         indexes = []
         for attr_name, attr_type in cls.__dict__.iteritems():
             if isinstance(attr_type, Field) and attr_type.index:
-                kwargs = {name: attr_name}
+                kwargs = {"name": attr_name}
                 kwargs.update(dict( (k, True) for k in attr_type.index))
                 indexes.append(kwargs)
         return indexes
