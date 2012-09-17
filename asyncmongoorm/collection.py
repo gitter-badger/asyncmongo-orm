@@ -57,21 +57,21 @@ class Collection(object):
     @property
     def _field_names(self):
         return map(lambda s: s.name, self._fields)
-        
+
     def as_dict(self, fields=(), exclude=(), json_compat=None):
         items = {}
         for field in self._field_names:
-            if field.name in exclude:
+            if field in exclude:
                 continue
-            if fields and not field.name in fields:
+            if fields and not field in fields:
                 continue
-            attr_value = getattr(self, field.name)
+            attr_value = getattr(self, field)
             if json_compat:
                 if isinstance(attr_value, ObjectId):
                     attr_value = str(attr_value)
                 if isinstance(attr_value, date):
                     attr_value = attr_value.isoformat()
-            items[field.name] = attr_value
+            items[field] = attr_value
         return items
 
     def changed_data_dict(self):
