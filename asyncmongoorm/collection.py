@@ -25,14 +25,16 @@ class CollectionMetaClass(type):
         global __lazy_classes__
         
         # Add the document's fields to the _data
+        fields = []
         for attr_name, attr_value in attrs.items():
             if hasattr(attr_value, "__class__") and issubclass(attr_value.__class__, Field):
                 attr_value.name = attr_name
-                
+                fields.append(attr_value)
+
         new_class = super(CollectionMetaClass, cls).__new__(cls, name, bases, attrs)
 
         __lazy_classes__[name] = new_class
-        
+        new_class._fields = tuple(fields)
         new_class.objects = Manager(collection=new_class)
         register_collection(new_class)
         return new_class
@@ -52,21 +54,24 @@ class Collection(object):
         self._data = { }
         self._changed_fields = set()
 
+    @property
+    def _field_names(self):
+        return map(lambda s: s.name, self._fields)
+        
     def as_dict(self, fields=(), exclude=(), json_compat=None):
         items = {}
-        for attr_name, attr_type in self.__class__.__dict__.iteritems():
-            if attr_name in exclude:
+        for field in self._field_names:
+            if field.name in exclude:
                 continue
-            if fields and not attr_name in fields:
+            if fields and not field.name in fields:
                 continue
-            if isinstance(attr_type, Field):
-                attr_value = getattr(self, attr_name)
-                if json_compat:
-                    if isinstance(attr_value, ObjectId):
-                        attr_value = str(attr_value)
-                    if isinstance(attr_value, date):
-                        attr_value = attr_value.isoformat()
-                items[attr_name] = attr_value
+            attr_value = getattr(self, field.name)
+            if json_compat:
+                if isinstance(attr_value, ObjectId):
+                    attr_value = str(attr_value)
+                if isinstance(attr_value, date):
+                    attr_value = attr_value.isoformat()
+            items[field.name] = attr_value
         return items
 
     def changed_data_dict(self):
@@ -77,7 +82,7 @@ class Collection(object):
         indexes = []
         for attr_name, attr_type in cls.__dict__.iteritems():
             if isinstance(attr_type, Field) and attr_type.index:
-                indexes.append((attr_name, 
+                indexes.append((attr_name,
                 dict( (k, True) for k in attr_type.index)))
         return indexes
 
