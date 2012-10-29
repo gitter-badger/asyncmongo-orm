@@ -111,6 +111,11 @@ class Collection(object):
     def is_new(self):
         return getattr(self, '_is_new', True)
 
+    @staticmethod
+    def _handle_errors(error):
+        if error and "error" in error and error["error"]:
+            raise error["error"]
+
     @gen.engine
     def save(self, obj_data=None, callback=None):
         if self.is_new():
@@ -118,8 +123,7 @@ class Collection(object):
             if not obj_data:
                 obj_data = self.as_dict()
             result, error = yield gen.Task(Session(self.__collection__).insert, obj_data, safe=True)
-            if error:
-                raise error["error"]
+            self._handle_errors(error)
             self._is_new = False
             yield gen.Task(post_save.send, instance=self)
         else:
@@ -129,8 +133,7 @@ class Collection(object):
                 obj_data = self.changed_data_dict()
 
             response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, { "$set": obj_data }, safe=True)
-            if error:
-                raise error["error"]
+            self._handle_errors(error)
             yield gen.Task(post_update.send, instance=self)
 
         self.update_attrs(obj_data)
@@ -143,8 +146,7 @@ class Collection(object):
         pre_remove.send(instance=self)
 
         response, error = yield gen.Task(Session(self.__collection__).remove, {'_id': self._id})
-        if error:
-            raise error["error"]
+        self._handle_errors(error)
         post_remove.send(instance=self)
 
         if callback:
