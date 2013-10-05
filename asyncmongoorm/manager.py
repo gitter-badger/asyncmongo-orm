@@ -157,3 +157,14 @@ class Manager(object):
         yield gen.Task(Session(self.collection.__collection__).remove)
         if callback:
             callback()
+          
+            
+def attach(model_cls):
+    """
+    Short-cut decorator that attaches manger to a model class
+    """
+    def wrapper(manager_cls):
+        model_cls.objects = manager_cls(model_cls)
+        return manager_cls
+    return wrapper
+
