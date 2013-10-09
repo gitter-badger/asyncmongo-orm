@@ -4,6 +4,7 @@ import functools
 import logging
 from bson.objectid import ObjectId
 from tornado import gen
+from asyncmongoorm import bson_json
 from asyncmongoorm.signal import pre_save, post_save, pre_remove, post_remove, pre_update, post_update
 from asyncmongoorm.manager import Manager
 from asyncmongoorm.session import Session
@@ -66,13 +67,12 @@ class Collection(object):
             if fields and not field in fields:
                 continue
             attr_value = getattr(self, field)
-            if json_compat:
-                if isinstance(attr_value, ObjectId):
-                    attr_value = str(attr_value)
-                if isinstance(attr_value, date):
-                    attr_value = attr_value.isoformat()
             items[field] = attr_value
-        return items
+
+        if json_compat:
+            return bson_json.normalize(items)
+        else:
+            return items
 
     def changed_data_dict(self):
         return self.as_dict(fields=list(self._changed_fields))
