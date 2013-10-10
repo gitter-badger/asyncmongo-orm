@@ -3,7 +3,7 @@ from asyncmongo import Client
 class Session(object):
     
     _session = None
-    
+    _pool_id = "mydb"
     def __new__(cls, collection_name=None):
 
         if not cls._session:
@@ -16,10 +16,9 @@ class Session(object):
     @classmethod
     def create(cls, host, port, dbname, **kwargs):
         if not cls._session:
-#            raise Exception(Client)
-            cls._session = Client(pool_id='mydb', host=host, port=port, dbname=dbname, **kwargs)
+            cls._session = Client(pool_id=cls._pool_id, host=host, port=port, dbname=dbname, **kwargs)
     
     @classmethod
     def destroy(cls):
+        cls._session._pool.close()
         cls._session = None
-

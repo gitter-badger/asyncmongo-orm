@@ -1,14 +1,11 @@
 # coding: utf-8
-from datetime import date
-import functools
 import logging
-from bson.objectid import ObjectId
 from tornado import gen
 from asyncmongoorm import bson_json
 from asyncmongoorm.signal import pre_save, post_save, pre_remove, post_remove, pre_update, post_update
 from asyncmongoorm.manager import Manager
 from asyncmongoorm.session import Session
-from asyncmongoorm.field import Field, ObjectIdField
+from asyncmongoorm.field import Field
 
 __lazy_classes__ = {}
 

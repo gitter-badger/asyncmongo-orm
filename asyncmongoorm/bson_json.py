@@ -69,7 +69,6 @@ but it will be faster as there is less recursion.
 """
 
 import base64
-import calendar
 import datetime
 import re
 
