@@ -1,5 +1,6 @@
 # coding: utf-8
 import logging
+import types
 from tornado import gen
 from asyncmongoorm import bson_json
 from asyncmongoorm.signal import pre_save, post_save, pre_remove, post_remove, pre_update, post_update
@@ -115,6 +116,11 @@ class Collection(object):
 
     @gen.engine
     def save(self, obj_data=None, callback=None):
+        if not isinstance(obj_data, (types.NoneType, dict)):
+            raise ValueError("obj_data should be either None or dict")
+        if callback and not callable(callback):
+            raise ValueError("callback should be callable")
+
         if self.is_new():
             yield gen.Task(pre_save.send, instance=self)
             if not obj_data:
