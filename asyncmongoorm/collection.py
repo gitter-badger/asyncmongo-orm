@@ -136,8 +136,8 @@ class Collection(object):
                 obj_data = self.changed_data_dict()
             else:
                 # Normalize custom obj_data, to avoid setting values for fields that are not
-                # defined in this model
-                obj_data = dict(filter(lambda f, v: f in self._field_names, obj_data.iteritems()))
+                normalize = lambda s: dict(filter(lambda (f, v): f in self._field_names, s.iteritems()))
+                obj_data = normalize(obj_data)
             response, error = yield gen.Task(Session(self.__collection__).update, {'_id': self._id}, { "$set": obj_data }, safe=True)
             self._handle_errors(error)
             yield gen.Task(post_update.send, instance=self)
