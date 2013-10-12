@@ -37,19 +37,27 @@ class Field(object):
 
         return value
 
-    def __set__(self, instance, value):
+    def _coerce(self, value):
+        try:
+            return self.field_type(value)
+        except TypeError:
+            raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
+        except ValueError:
+            raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
 
+    def __set__(self, instance, value):
+        # Attempt to coerce value to a field type
         if value is not None and not isinstance(value, self.field_type):
-            try:
-                value = self.field_type(value)
-            except TypeError:
-                raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
-            except ValueError:
-                raise(TypeError("type of %s must be %s" % (self.name, self.field_type)))
+            value = self._coerce(value)
+
         # MongoDB doesnt allow to change _id
         if self.name != "_id":
             instance._changed_fields.add(self.name)
-        instance._data[self.name] = value
+
+        current_value = instance._data.get(self.name)
+        value_updated = value != current_value
+        if value_updated:
+            instance._data[self.name] = value
 
 class StringField(Field):
 
