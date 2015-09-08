@@ -1,6 +1,8 @@
 Asyncmongo-ORM
 ======================
 
+[![Join the chat at https://gitter.im/superduper/asyncmongo-orm](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/superduper/asyncmongo-orm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Asyncmongo-ORM is a object-relation mapping for asyncmongo. [AsyncMongo](http://github.github.com/bitly/asyncmongo) is an asynchronous library for accessing mongo which is built on the tornado ioloop.
 
 asyncmongoorm is currently in version 0.3.2
